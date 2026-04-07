@@ -1,0 +1,24 @@
+{
+  "name": "linkvault-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@clerk/express": "^2.0.7",
+    "@supabase/supabase-js": "^2.100.1",
+    "axios": "^1.14.0",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
+    "razorpay": "^2.9.6",
+    "uuid": "^13.0.0"
+  }
+}
