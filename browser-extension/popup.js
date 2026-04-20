@@ -53,6 +53,17 @@ function hideStatus() {
 
 // Initialize
 async function init() {
+  try {
+    const cookie = await new Promise(resolve => {
+      chrome.cookies.get({ url: 'http://localhost:5173', name: '__session' }, resolve);
+    });
+    if (cookie && cookie.value) {
+      await saveConfig('http://localhost:5000/api', cookie.value);
+    }
+  } catch (e) {
+    console.log("Could not auto-fetch connect token.");
+  }
+
   const config = await getConfig();
 
   if (config.apiUrl && config.authToken) {

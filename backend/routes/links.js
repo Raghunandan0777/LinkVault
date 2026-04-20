@@ -152,43 +152,45 @@ router.post('/', requireAuth, syncUser, async (req, res, next) => {
     const { data: link, error } = await supabase.from('links').insert(linkData).select().single();
     if (error) throw error;
 
-    // AI auto-tagging: generate semantic tags from enriched metadata
+    // AI auto-tagging: generate semantic tags from enriched metadata (Pro feature)
     let allTagIds = [...(tags || [])];
-    try {
-      const aiTagNames = await generateAITags({
-        title: linkData.title,
-        description: linkData.description,
-        domain: linkData.domain,
-        url,
-      });
+    if (user.plan !== 'free') {
+      try {
+        const aiTagNames = await generateAITags({
+          title: linkData.title,
+          description: linkData.description,
+          domain: linkData.domain,
+          url,
+        });
 
-      if (aiTagNames.length > 0) {
-        for (const tagName of aiTagNames) {
-          // Check if tag already exists for this user
-          const { data: existing } = await supabase
-            .from('tags')
-            .select('id')
-            .eq('user_id', user.id)
-            .ilike('name', tagName)
-            .single();
-
-          if (existing) {
-            if (!allTagIds.includes(existing.id)) allTagIds.push(existing.id);
-          } else {
-            // Auto-create the tag
-            const TAG_COLORS = ['#8B5CF6','#F472B6','#34D399','#FBBF24','#0EA5E9','#14B8A6','#F97316','#EF4444'];
-            const color = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
-            const { data: newTag } = await supabase
+        if (aiTagNames.length > 0) {
+          for (const tagName of aiTagNames) {
+            // Check if tag already exists for this user
+            const { data: existing } = await supabase
               .from('tags')
-              .insert({ user_id: user.id, name: tagName, color_hex: color })
-              .select()
+              .select('id')
+              .eq('user_id', user.id)
+              .ilike('name', tagName)
               .single();
-            if (newTag) allTagIds.push(newTag.id);
+
+            if (existing) {
+              if (!allTagIds.includes(existing.id)) allTagIds.push(existing.id);
+            } else {
+              // Auto-create the tag
+              const TAG_COLORS = ['#8B5CF6','#F472B6','#34D399','#FBBF24','#0EA5E9','#14B8A6','#F97316','#EF4444'];
+              const color = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+              const { data: newTag } = await supabase
+                .from('tags')
+                .insert({ user_id: user.id, name: tagName, color_hex: color })
+                .select()
+                .single();
+              if (newTag) allTagIds.push(newTag.id);
+            }
           }
         }
+      } catch (aiErr) {
+        console.error('[AI Tagger] Error during auto-tagging:', aiErr.message);
       }
-    } catch (aiErr) {
-      console.error('[AI Tagger] Error during auto-tagging:', aiErr.message);
     }
 
     // Add all tags (manual + AI)

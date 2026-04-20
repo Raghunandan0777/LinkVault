@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Link2, MousePointer, Tag, Eye, ExternalLink, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, Link2, MousePointer, Tag, Eye, ExternalLink, Download, Lock, Zap } from 'lucide-react';
 import { getAnalytics } from '../lib/api';
-
+import { useApp } from '../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 const C = {
   accent: '#8B5CF6', secondary: '#F472B6', tertiary: '#FBBF24',
   quaternary: '#34D399', foreground: '#1E293B', cream: '#FFFDF5', muted: '#64748B',
@@ -62,14 +63,40 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Analytics() {
+  const { plan } = useApp();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);
 
   useEffect(() => {
+    if (plan === 'free') return;
     setLoading(true);
     getAnalytics(days).then(setData).catch(() => {}).finally(() => setLoading(false));
-  }, [days]);
+  }, [days, plan]);
+
+  if (plan === 'free') {
+    return (
+      <div className="max-w-4xl mx-auto flex flex-col items-center justify-center text-center py-20 animate-fade-in" style={{ fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' }}>
+        <div className="bg-white rounded-3xl p-10 max-w-2xl w-full" style={{ border: `2px solid ${C.foreground}`, boxShadow: hardShadow(C.foreground, 6, 6) }}>
+          <div className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center mb-6" style={{ background: `${C.accent}15`, border: `2px solid ${C.accent}` }}>
+            <Lock size={28} style={{ color: C.accent }} />
+          </div>
+          <h2 className="font-extrabold text-3xl mb-4" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>Advanced Analytics Locked</h2>
+          <p className="text-base mb-8 max-w-md mx-auto" style={{ color: C.muted }}>
+            Upgrade to the Pro or Teams plan to get deep insights into your links, tag distributions, and profile views over time.
+          </p>
+          <button onClick={() => navigate('/settings')}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-white text-base font-bold transition-all"
+            style={{ background: C.accent, border: `2px solid ${C.foreground}`, boxShadow: hardShadow(C.foreground, 3, 3) }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 5, 5); e.currentTarget.style.transform = 'translate(-2px,-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 3, 3); e.currentTarget.style.transform = 'none'; }}>
+            <Zap size={18} /> Upgrade to Pro
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (d) => new Date(d).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
   const fmtNum = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);

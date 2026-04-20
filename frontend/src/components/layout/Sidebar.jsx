@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useClerk, useUser } from '@clerk/clerk-react';
-import { Link2, FolderOpen, Globe, BarChart3, Settings, LogOut, Zap, Users } from 'lucide-react';
+import { Link2, FolderOpen, Globe, BarChart3, Settings, LogOut, Zap, Users, Mail } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const C = {
@@ -101,7 +101,7 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
 
         {/* User + Upgrade */}
         <div className="p-3 space-y-3" style={{ borderTop: `2px solid ${C.foreground}08` }}>
-          {plan === 'free' && (
+          {plan === 'free' ? (
             <div
               className="rounded-xl p-3.5"
               style={{ background: C.accent, border: `2px solid ${C.foreground}`, boxShadow: hardShadow() }}
@@ -126,6 +126,16 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
                 ₹299/month
               </button>
             </div>
+          ) : (
+            <a
+              href="mailto:support@linkvault.com"
+              className="flex items-center gap-2 rounded-xl p-3 text-xs font-bold transition-all duration-200"
+              style={{ border: `2px solid ${C.foreground}15`, background: `${C.tertiary}10`, color: C.foreground }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${C.tertiary}20`; e.currentTarget.style.borderColor = C.tertiary; }}
+              onMouseLeave={e => { e.currentTarget.style.background = `${C.tertiary}10`; e.currentTarget.style.borderColor = `${C.foreground}15`; }}
+            >
+              <Mail size={14} style={{ color: '#D97706' }} /> Premium Support
+            </a>
           )}
           <div className="flex items-center gap-2.5 px-2 py-2">
             <img

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
-import { User, Palette, ArrowUpDown, CreditCard, Save, Loader2, Upload, Download, CheckCircle, Zap, Crown, Users } from 'lucide-react';
+import { User, Palette, ArrowUpDown, CreditCard, Save, Loader2, Upload, Download, CheckCircle, Zap, Crown, Users, Mail, Puzzle } from 'lucide-react';
 import { getProfile, updateProfile, createOrder, verifyPayment, getPaymentStatus, importBookmarks } from '../lib/api';
 import { useApp } from '../context/AppContext';
 import toast from 'react-hot-toast';
@@ -293,6 +293,47 @@ function AccountTab({ currentPlan }) {
           </div>
         )}
       </div>
+
+      {currentPlan !== 'free' && (
+        <div className="mt-8 animate-fade-in">
+          <h3 className="font-extrabold text-lg mb-4" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>Premium Extras</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Browser Extension */}
+            <div className="bg-white rounded-2xl p-6 transition-all duration-200"
+              style={{ border: `2px solid ${C.foreground}`, boxShadow: `5px 5px 0px 0px ${C.secondary}` }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = `7px 7px 0px 0px ${C.secondary}`; e.currentTarget.style.transform = 'translate(-2px,-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = `5px 5px 0px 0px ${C.secondary}`; e.currentTarget.style.transform = 'none'; }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                style={{ background: `${C.secondary}15`, border: `2px solid ${C.foreground}` }}>
+                <Puzzle size={18} style={{ color: C.secondary }} />
+              </div>
+              <h4 className="font-extrabold text-base mb-1" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>Browser Extension</h4>
+              <p className="text-sm mb-4" style={{ color: C.muted }}>Save links directly from your browser with our Chrome Extension. Exclusive for premium users.</p>
+              <a href="/linkvault-extension.zip" download="linkvault-extension.zip" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all"
+                style={{ background: C.foreground, color: '#fff' }}>
+                <Download size={14} /> Download Extension (ZIP)
+              </a>
+            </div>
+
+            {/* Premium Support */}
+            <div className="bg-white rounded-2xl p-6 transition-all duration-200"
+              style={{ border: `2px solid ${C.foreground}`, boxShadow: `5px 5px 0px 0px ${C.tertiary}` }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = `7px 7px 0px 0px ${C.tertiary}`; e.currentTarget.style.transform = 'translate(-2px,-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = `5px 5px 0px 0px ${C.tertiary}`; e.currentTarget.style.transform = 'none'; }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                style={{ background: `${C.tertiary}15`, border: `2px solid ${C.foreground}` }}>
+                <Mail size={18} style={{ color: '#D97706' }} />
+              </div>
+              <h4 className="font-extrabold text-base mb-1" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>Priority Support</h4>
+              <p className="text-sm mb-4" style={{ color: C.muted }}>Need help? Reach out to our dedicated support team. Response times typically within 4 hours.</p>
+              <a href="mailto:support@linkvault.com" className="inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all"
+                style={{ background: C.foreground, color: '#fff' }}>
+                <Mail size={14} /> Contact Support
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {currentPlan === 'free' && (
         <div>
