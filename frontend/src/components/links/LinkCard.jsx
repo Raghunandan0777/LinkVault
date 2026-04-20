@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, Trash2, Edit3, Globe, Eye, EyeOff, Share2 } from 'lucide-react';
+import { ExternalLink, Trash2, Edit3, Globe, Eye, EyeOff, Share2, AlertTriangle } from 'lucide-react';
 import { deleteLink, updateLink as apiUpdateLink } from '../../lib/api';
 import { useApp } from '../../context/AppContext';
 import toast from 'react-hot-toast';
@@ -85,6 +85,15 @@ export default function LinkCard({ link, index = 0, onEdit }) {
               style={{ background: `${C.quaternary}15`, color: C.quaternary, border: `1.5px solid ${C.quaternary}40` }}
             >
               <Eye size={10} /> Public
+            </span>
+          )}
+          {link.is_broken && (
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold"
+              style={{ background: '#FEE2E2', color: '#EF4444', border: '1.5px solid #FECACA' }}
+              title={`Link may be broken: ${link.health_status || 'unreachable'}`}
+            >
+              <AlertTriangle size={10} /> Broken
             </span>
           )}
         </div>

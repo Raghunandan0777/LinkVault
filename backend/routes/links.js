@@ -3,6 +3,7 @@ import { requireAuth, syncUser } from '../middleware/auth.js';
 import supabase from '../config/supabase.js';
 import { enrichUrl } from '../utils/enrichUrl.js';
 import { generateAITags } from '../utils/aiTagger.js';
+import { checkUserLinks } from '../utils/healthChecker.js';
 
 const router = Router();
 
@@ -68,6 +69,18 @@ router.get('/', requireAuth, syncUser, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/links/health-check - check health of user's links (MUST be above /:id)
+router.get('/health-check', requireAuth, syncUser, async (req, res, next) => {
+  try {
+    const clerkId = req.auth.userId;
+    const { data: user } = await supabase.from('users').select('id').eq('clerk_id', clerkId).single();
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const result = await checkUserLinks(user.id);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
 // GET /api/links/:id
 router.get('/:id', requireAuth, syncUser, async (req, res, next) => {
   try {
@@ -101,6 +114,22 @@ router.post('/', requireAuth, syncUser, async (req, res, next) => {
     if (user.plan === 'free') {
       const { count } = await supabase.from('links').select('id', { count: 'exact' }).eq('user_id', user.id);
       if (count >= 200) return res.status(403).json({ error: 'Free plan limit (200 links) reached. Upgrade to Pro.' });
+    }
+
+    // Check for duplicate URL
+    const { data: existingLink } = await supabase
+      .from('links')
+      .select('id, title, url, domain, created_at')
+      .eq('user_id', user.id)
+      .eq('url', url)
+      .single();
+
+    if (existingLink && !req.body.force_save) {
+      return res.status(409).json({
+        error: 'duplicate',
+        message: 'This URL is already in your vault',
+        existing_link: existingLink,
+      });
     }
 
     // Enrich URL in background
@@ -250,6 +279,7 @@ router.post('/:id/click', async (req, res, next) => {
 });
 
 // Tag routes moved above /:id — see top of file
+
 
 // POST /api/links/import - import bookmarks from HTML file
 router.post('/import', requireAuth, syncUser, async (req, res, next) => {

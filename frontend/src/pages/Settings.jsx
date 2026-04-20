@@ -83,7 +83,7 @@ function ProfileTab({ profile, onUpdate }) {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[['username', 'Username', 'yourusername'], ['display_name', 'Display Name', 'Your Name']].map(([k, l, p]) => (
               <div key={k}>
                 <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.muted }}>{l}</label>
@@ -113,7 +113,7 @@ function ProfileTab({ profile, onUpdate }) {
         </div>
         <div className="lg:col-span-2 bg-white rounded-2xl p-6"
           style={{ border: `2px solid ${C.foreground}`, boxShadow: `5px 5px 0px 0px ${C.foreground}10` }}>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { key: 'twitter_handle', label: 'Twitter / X', placeholder: '@username' },
               { key: 'github_handle', label: 'GitHub', placeholder: 'github.com/...' },
@@ -347,7 +347,7 @@ export default function Settings() {
   return (
     <div className="max-w-5xl mx-auto" style={{ fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' }}>
       <div className="mb-6">
-        <h1 className="font-extrabold text-3xl" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>Settings</h1>
+        <h1 className="font-extrabold text-2xl sm:text-3xl" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>Settings</h1>
         <p className="text-sm mt-1" style={{ color: C.muted }}>Manage your account preferences, profile details, and data vault.</p>
       </div>
 

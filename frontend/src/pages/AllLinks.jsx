@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { LayoutGrid, List, Plus, Loader2, Link2 } from 'lucide-react';
+import { LayoutGrid, List, Plus, Loader2, Link2, HeartPulse } from 'lucide-react';
 import { getLinks, getTags } from '../lib/api';
+import api from '../lib/api';
 import { useApp } from '../context/AppContext';
 import LinkCard from '../components/links/LinkCard';
 import AddLinkModal from '../components/links/AddLinkModal';
+import toast from 'react-hot-toast';
 
 const C = {
   accent: '#8B5CF6', secondary: '#F472B6', tertiary: '#FBBF24',
@@ -19,6 +21,28 @@ export default function AllLinks() {
   const [showAdd, setShowAdd] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [checking, setChecking] = useState(false);
+
+  const handleHealthCheck = async () => {
+    setChecking(true);
+    const toastId = toast.loading('Checking link health...');
+    try {
+      const result = await api.get('/links/health-check');
+      toast.dismiss(toastId);
+      if (result.broken > 0) {
+        toast.error(`Found ${result.broken} broken link${result.broken > 1 ? 's' : ''}!`, { duration: 5000 });
+      } else {
+        toast.success(`All ${result.checked} links are healthy! ✅`, { duration: 4000 });
+      }
+      // Refresh links to show broken badges
+      fetchLinks(true);
+    } catch {
+      toast.dismiss(toastId);
+      toast.error('Health check failed');
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const fetchLinks = useCallback(async (reset = false) => {
     setLoading(true);
@@ -47,13 +71,13 @@ export default function AllLinks() {
   return (
     <div className="max-w-7xl mx-auto" style={{ fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2"
             style={{ background: `${C.accent}12`, color: C.accent, border: `1.5px solid ${C.accent}30` }}>
             Workspace
           </span>
-          <h1 className="font-extrabold text-3xl" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>All Links</h1>
+          <h1 className="font-extrabold text-2xl sm:text-3xl" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>All Links</h1>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
@@ -67,8 +91,16 @@ export default function AllLinks() {
               </button>
             ))}
           </div>
+          <button onClick={handleHealthCheck} disabled={checking}
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200"
+            style={{ background: '#fff', color: checking ? C.muted : C.foreground, border: `2px solid ${C.foreground}15` }}
+            onMouseEnter={e => { if (!checking) { e.currentTarget.style.background = '#FEE2E2'; e.currentTarget.style.borderColor = '#EF444440'; e.currentTarget.style.color = '#EF4444'; } }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = `${C.foreground}15`; e.currentTarget.style.color = C.foreground; }}
+          >
+            {checking ? <Loader2 size={16} className="animate-spin" /> : <HeartPulse size={16} />} <span className="hidden sm:inline">{checking ? 'Checking...' : 'Check Health'}</span>
+          </button>
           <button onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-white text-sm font-bold transition-all duration-200"
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-full text-white text-xs sm:text-sm font-bold transition-all duration-200"
             style={{ background: C.accent, border: `2px solid ${C.foreground}`, boxShadow: hardShadow() }}
             onMouseEnter={e => { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 5, 5); e.currentTarget.style.transform = 'translate(-2px,-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.boxShadow = hardShadow(); e.currentTarget.style.transform = 'none'; }}

@@ -128,17 +128,17 @@ export default function Teams() {
   return (
     <div style={{ fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div className="flex items-center gap-3">
           <span className="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-white"
             style={{ background: C.quaternary, border: `2px solid ${C.foreground}`, boxShadow: hardShadow(C.foreground, 2, 2) }}>Teams</span>
-          <h1 className="text-2xl font-extrabold" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>
+          <h1 className="text-xl sm:text-2xl font-extrabold" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>
             Your Teams
           </h1>
         </div>
         <motion.button onClick={() => setShowCreateModal(true)}
           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={popSpring}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-bold"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-bold self-start sm:self-auto"
           style={{ background: C.accent, border: `2px solid ${C.foreground}`, boxShadow: hardShadow() }}>
           <Plus size={16} /> New Team
         </motion.button>
@@ -205,7 +205,7 @@ export default function Teams() {
                     </button>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {['owner', 'admin'].includes(selectedTeam.role) && (
                     <>
                       <motion.button onClick={() => setShowInviteModal(true)}

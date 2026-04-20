@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Link2, Loader2, Tag, FolderOpen, FileText, Sparkles, CheckCircle2, Image } from 'lucide-react';
+import { X, Link2, Loader2, Tag, FolderOpen, FileText, Sparkles, CheckCircle2, Image, AlertTriangle } from 'lucide-react';
 import { createLink, getTags, createTag, getCollections, enrichUrl } from '../../lib/api';
 import { useApp } from '../../context/AppContext';
 import toast from 'react-hot-toast';
@@ -24,6 +24,7 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
   const [showTagInput, setShowTagInput] = useState(false);
   const [enriching, setEnriching] = useState(false);
   const [enriched, setEnriched] = useState(null);
+  const [duplicate, setDuplicate] = useState(null);
   const enrichTimer = useRef(null);
 
   useEffect(() => {
@@ -59,21 +60,29 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
     } catch { toast.error('Failed to create tag'); }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, forceSave = false) => {
+    e?.preventDefault();
     if (!url.trim()) return;
     setLoading(true);
+    setDuplicate(null);
     try {
       const link = await createLink({
         url: url.trim(), title: title.trim() || undefined,
         notes: notes.trim() || undefined, collection_id: collectionId || undefined,
         tags: selectedTags, is_public: isPublic,
+        ...(forceSave && { force_save: true }),
       });
       addLink(link);
       if (onCreated) onCreated(link);
       toast.success('Link saved to vault!');
       onClose();
-    } catch (err) { toast.error(err?.error || 'Failed to save link'); }
+    } catch (err) {
+      if (err?.error === 'duplicate') {
+        setDuplicate(err);
+      } else {
+        toast.error(err?.error || 'Failed to save link');
+      }
+    }
     finally { setLoading(false); }
   };
 
@@ -155,8 +164,26 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
             </div>
           )}
 
+          {/* Duplicate warning */}
+          {duplicate && (
+            <div className="flex items-start gap-3 p-3 rounded-xl animate-fade-in" style={{ background: '#FEF3C7', border: `2px solid ${C.tertiary}` }}>
+              <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" style={{ color: '#D97706' }} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold" style={{ color: '#92400E' }}>This URL is already in your vault</p>
+                <p className="text-xs mt-0.5" style={{ color: '#A16207' }}>
+                  Saved as "{duplicate.existing_link?.title || 'Untitled'}" on {new Date(duplicate.existing_link?.created_at).toLocaleDateString()}
+                </p>
+                <button type="button" onClick={(e) => handleSubmit(e, true)}
+                  className="mt-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                  style={{ background: '#D97706', color: '#fff', border: `1.5px solid #92400E` }}>
+                  Save Anyway
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Title + Collection */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.muted }}>Title</label>
               <input type="text" value={title} onChange={e => setTitle(e.target.value)}
