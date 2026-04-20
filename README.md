@@ -1,307 +1,170 @@
-# 🔗 LinkVault
+# LinkVault
 
-**Your personal link management hub — save, organize, and share your bookmarks beautifully.**
+A bookmark manager that doesn't suck. Save links, auto-enrich them with metadata, organize into collections, and get AI-powered search — all in one place.
 
-LinkVault is a full-stack web application that lets you save links from anywhere on the internet, organize them into collections, track click analytics, and share a public profile page with the world. Think of it as your own customizable bookmark manager with superpowers.
+I built this because I was tired of browser bookmarks being a graveyard. LinkVault actually makes your saved links useful again.
 
----
-
-## ✨ What Can You Do With LinkVault?
-
-- **Save Links Instantly** — Paste any URL and LinkVault auto-fetches the title, description, favicon, and thumbnail for you.
-- **Organize With Collections** — Group your links into named collections (e.g., "Design Inspiration", "Dev Tools", "Reading List").
-- **Tag Everything** — Add color-coded tags to links for quick filtering and search.
-- **Track Analytics** — See how many people clicked your shared links, where they came from, and when.
-- **Public Profile Page** — Get your own `linkvault.app/u/yourname` page that showcases your curated links and collections.
-- **Import & Export** — Bring in bookmarks from your browser or export your data anytime.
-- **Upgrade With Razorpay** — Free tier to get started, with a Pro plan for power users (payment handled via Razorpay).
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![Node](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)
 
 ---
 
-## 🛠️ Tech Stack
+## What it does
 
-### Frontend
-| Tool | Purpose |
-|------|---------|
-| **React 19** | UI library |
-| **Vite 8** | Lightning-fast dev server & bundler |
-| **Tailwind CSS 3** | Utility-first styling |
-| **React Router 6** | Client-side routing |
-| **Clerk** | Authentication (sign up, sign in, session management) |
-| **Framer Motion** | Smooth animations & transitions |
-| **Recharts** | Analytics charts & graphs |
-| **Lucide React** | Beautiful icon set |
-| **Lenis** | Smooth scrolling |
-| **React Hot Toast** | Toast notifications |
-
-### Backend
-| Tool | Purpose |
-|------|---------|
-| **Node.js** | Runtime |
-| **Express 5** | REST API framework |
-| **Supabase** | PostgreSQL database + storage |
-| **Clerk (Express SDK)** | Auth middleware (verifies JWT tokens) |
-| **Helmet** | Security headers |
-| **Morgan** | HTTP request logging |
-| **Rate Limiter** | API abuse protection (200 req / 15 min) |
-| **Cheerio** | Server-side HTML parsing for link metadata scraping |
-| **Razorpay** | Payment processing |
-| **node-cron** | Scheduled background tasks |
+- **Paste a URL → get a rich bookmark.** Title, description, favicon, thumbnail — all auto-scraped.
+- **AI tags every link for you.** Uses Gemini to classify links ("Development", "Design", "Tutorial", etc). No API key? Falls back to smart domain-based tagging.
+- **Semantic search.** Ask "that article about React performance" instead of remembering exact titles.
+- **Collections with drag-and-drop.** Organize links into groups. Reorder them however you want.
+- **Teams.** Invite people, assign roles, share collections. Built for small teams who share resources.
+- **Analytics.** See who's clicking your shared links, where they're from, and what's trending.
+- **Import your bookmarks.** Export from Chrome/Firefox → upload the HTML file → done. Handles duplicates.
+- **Export everything.** JSON or CSV. Your data is yours.
+- **Health checker.** A background job pings all your URLs every 6 hours and flags broken ones. There's also a manual "Check Health" button.
+- **Duplicate warning.** If you try to save a URL you already have, it tells you and lets you decide.
+- **Chrome extension.** One-click save from any page. Shows AI-generated tags after saving.
+- **Public profile.** Share your curated links at `/u/yourname`.
 
 ---
 
-## 📁 Project Structure
+## Tech
 
-```
-linkvault/
-├── frontend/                  # React + Vite app
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/        # Sidebar, Navbar, AppLayout
-│   │   │   └── links/         # LinkCard, LinkForm, etc.
-│   │   ├── pages/
-│   │   │   ├── LandingPage.jsx
-│   │   │   ├── AllLinks.jsx
-│   │   │   ├── Collections.jsx
-│   │   │   ├── CollectionDetail.jsx
-│   │   │   ├── Analytics.jsx
-│   │   │   ├── Settings.jsx
-│   │   │   ├── PublicProfile.jsx
-│   │   │   ├── PublicCollection.jsx
-│   │   │   └── PublicPageView.jsx
-│   │   ├── context/           # React context providers
-│   │   ├── lib/               # API client & utilities
-│   │   ├── App.jsx            # Route definitions
-│   │   └── main.jsx           # Entry point
-│   ├── tailwind.config.js
-│   ├── vite.config.js
-│   └── package.json
-│
-├── backend/                   # Express API server
-│   ├── routes/
-│   │   ├── links.js           # CRUD for links + metadata scraping
-│   │   ├── collections.js     # CRUD for collections
-│   │   ├── analytics.js       # Click tracking & dashboard stats
-│   │   ├── profile.js         # User profile management
-│   │   ├── payment.js         # Razorpay order creation & verification
-│   │   └── public.js          # Public profile & collection endpoints
-│   ├── middleware/             # Auth & validation middleware
-│   ├── config/                # Supabase client setup
-│   ├── utils/                 # Helper functions
-│   ├── schema.sql             # Full database schema (run in Supabase)
-│   ├── server.js              # App entry point
-│   └── package.json
-│
-└── .gitignore
-```
+**Frontend:** React 19, Vite, Tailwind, Framer Motion, Clerk (auth), Recharts
+
+**Backend:** Node.js, Express 5, Supabase (Postgres + RLS), Gemini Flash (AI), Cheerio (scraping), Razorpay (payments)
+
+**Extension:** Chrome Manifest V3
 
 ---
 
-## 🚀 Getting Started
+## Setup
 
-### Prerequisites
+You'll need Node 18+, a [Supabase](https://supabase.com) project, and a [Clerk](https://clerk.com) app. Razorpay and Gemini API keys are optional — everything works without them, just with reduced functionality.
 
-Before you start, make sure you have:
-
-- **Node.js** (v18 or higher) — [Download here](https://nodejs.org)
-- **A Supabase account** — [Sign up free](https://supabase.com)
-- **A Clerk account** — [Sign up free](https://clerk.com)
-- **A Razorpay account** (optional, for payments) — [Sign up](https://razorpay.com)
-
----
-
-### 1. Clone the Repository
+### Clone and install
 
 ```bash
 git clone https://github.com/Raghunandan0777/LinkVault.git
 cd LinkVault
+
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-### 2. Set Up the Database
+### Database
 
-1. Go to your **Supabase project dashboard**
-2. Open the **SQL Editor**
-3. Copy the contents of `backend/schema.sql` and run it
-4. This creates all tables, indexes, and functions automatically
+Go to your Supabase SQL Editor and run these files in order:
 
-### 3. Set Up the Backend
+1. `backend/schema.sql` — core tables
+2. `backend/migration_teams.sql` — teams feature
+3. `backend/migration_health_check.sql` — health checker columns
 
-```bash
-cd backend
-npm install
+### Environment variables
+
+**backend/.env**
 ```
-
-Create a `.env` file inside the `backend/` folder:
-
-```env
-# Server
 PORT=5000
 FRONTEND_URL=http://localhost:5173
-
-# Supabase
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-supabase-service-role-key
+SUPABASE_SERVICE_KEY=your-service-role-key
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
 
-# Clerk
-CLERK_PUBLISHABLE_KEY=pk_test_your-clerk-key
-CLERK_SECRET_KEY=sk_test_your-clerk-secret
-
-# Razorpay (optional — needed only for payments)
-RAZORPAY_KEY_ID=rzp_test_your-key
-RAZORPAY_KEY_SECRET=your-razorpay-secret
+# Optional
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+GEMINI_API_KEY=...
 ```
 
-Start the backend:
-
-```bash
-npm run dev
+**frontend/.env**
 ```
-
-The API will be running at `http://localhost:5000`.
-
-### 4. Set Up the Frontend
-
-Open a **new terminal**:
-
-```bash
-cd frontend
-npm install
-```
-
-Create a `.env` file inside the `frontend/` folder:
-
-```env
 VITE_API_URL=http://localhost:5000/api
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_your-clerk-key
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 
-Start the frontend:
+### Run it
 
 ```bash
-npm run dev
+# Terminal 1
+cd backend && npx nodemon
+
+# Terminal 2
+cd frontend && npm run dev
 ```
 
-Open your browser at `http://localhost:5173` — you should see the landing page! 🎉
+Open http://localhost:5173
+
+### Chrome extension (optional)
+
+1. Go to `chrome://extensions`
+2. Turn on Developer Mode
+3. Load unpacked → pick the `browser-extension` folder
 
 ---
 
-## 🗄️ Database Schema
+## Project structure
 
-LinkVault uses **Supabase (PostgreSQL)** with the following tables:
-
-| Table | What It Stores |
-|-------|---------------|
-| `users` | User profiles synced from Clerk (username, bio, social links, plan info) |
-| `links` | Saved bookmarks with auto-scraped metadata (title, thumbnail, favicon) |
-| `collections` | Named groups of links (can be public or private) |
-| `tags` | Color-coded labels for organizing links |
-| `link_tags` | Many-to-many relationship between links and tags |
-| `link_clicks` | Individual click events with timestamp and referrer |
-| `profile_views` | Tracks visits to public profile pages |
-| `payments` | Razorpay payment records for plan upgrades |
-| `link_saves` | Tracks when users save/bookmark links |
-
-Row Level Security (RLS) is enabled on all core tables for data isolation.
-
----
-
-## 🔌 API Endpoints
-
-All API routes are prefixed with `/api`.
-
-### Links
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/links` | Fetch all links for the logged-in user |
-| `POST` | `/api/links` | Save a new link (auto-scrapes metadata) |
-| `PUT` | `/api/links/:id` | Update a link |
-| `DELETE` | `/api/links/:id` | Delete a link |
-
-### Collections
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/collections` | List all collections |
-| `POST` | `/api/collections` | Create a new collection |
-| `PUT` | `/api/collections/:id` | Update a collection |
-| `DELETE` | `/api/collections/:id` | Delete a collection |
-
-### Analytics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/analytics` | Dashboard stats (clicks, views, top links) |
-
-### Profile
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/profile` | Get current user's profile |
-| `PUT` | `/api/profile` | Update profile settings |
-
-### Payments
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/payment/create-order` | Create a Razorpay order |
-| `POST` | `/api/payment/verify` | Verify payment & upgrade plan |
-
-### Public
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/public/:username` | Get a user's public profile |
-| `GET` | `/api/public/:username/collections/:slug` | Get a public collection |
-
-### Health Check
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/health` | Server status check |
+```
+linkvault/
+├── frontend/src/
+│   ├── components/layout/     # Sidebar, navbar
+│   ├── components/links/      # LinkCard, AddLinkModal, SearchModal
+│   ├── pages/                 # AllLinks, Collections, Analytics, Teams, Settings
+│   ├── context/               # App-wide state
+│   └── lib/api.js             # API client
+│
+├── backend/
+│   ├── routes/                # links, collections, analytics, teams, profile, payment, public
+│   ├── utils/aiTagger.js      # Gemini integration
+│   ├── utils/healthChecker.js # Broken link detection cron
+│   ├── utils/enrichUrl.js     # URL metadata scraping
+│   └── server.js
+│
+└── browser-extension/         # Chrome MV3 extension
+```
 
 ---
 
-## 🔒 Authentication Flow
+## API endpoints
 
-1. User clicks **"Get Started Free"** on the landing page
-2. Clerk handles the sign-up/sign-in flow (email, Google, GitHub, etc.)
-3. On first login, the backend auto-creates a user record in Supabase
-4. Every API request includes a Clerk JWT token in the `Authorization` header
-5. The backend verifies the token using `@clerk/express` middleware
+Everything's under `/api`. Auth is via Clerk JWT in the `Authorization` header.
 
----
+**Links** — `GET /links` · `POST /links` · `PATCH /links/:id` · `DELETE /links/:id` · `GET /links/health-check` · `POST /links/import` · `GET /links/export?format=json` · `POST /links/search/ai`
 
-## 📊 Pages Overview
+**Collections** — `GET /collections` · `POST /collections` · `PATCH /collections/:id` · `DELETE /collections/:id` · `PATCH /collections/:id/reorder`
 
-| Page | Route | What It Does |
-|------|-------|-------------|
-| Landing Page | `/` | Marketing page with features, pricing, and CTA |
-| All Links | `/links` | Main dashboard — view, search, filter, and manage all saved links |
-| Collections | `/collections` | Browse and manage link collections |
-| Collection Detail | `/collections/:id` | View links inside a specific collection |
-| Analytics | `/analytics` | Charts and stats — clicks over time, top links, referrers |
-| Settings | `/settings` | Edit profile, social links, username, and manage account |
-| Public Profile | `/u/:username` | Shareable public page showing user's curated links |
-| Public Collection | `/u/:username/:slug` | Public view of a specific collection |
+**Teams** — `GET /teams` · `POST /teams` · `DELETE /teams/:id` · `POST /teams/:id/invite` · `GET /teams/:id/members` · `POST /teams/:id/collections/:colId`
+
+**Other** — `GET /profile` · `PATCH /profile` · `GET /analytics/overview` · `POST /payment/order` · `POST /payment/verify` · `GET /public/:username`
 
 ---
 
-## 🤝 Contributing
+## Database
 
-Contributions are welcome! Here's how:
+11 tables in Supabase with Row Level Security:
 
-1. **Fork** this repository
-2. **Create a branch** for your feature: `git checkout -b feature/awesome-thing`
-3. **Commit your changes**: `git commit -m "Add awesome thing"`
-4. **Push to your fork**: `git push origin feature/awesome-thing`
-5. **Open a Pull Request** and describe what you've built
+`users` · `links` · `collections` · `tags` · `link_tags` · `link_clicks` · `profile_views` · `payments` · `teams` · `team_members` · `team_collections`
+
+The `links` table has `is_broken`, `health_status`, and `last_checked_at` columns for the health checker.
 
 ---
 
-## 📝 License
+## How auth works
 
-This project is open source and available under the [MIT License](LICENSE).
-
----
-
-## 💬 Questions?
-
-If you run into any issues or have ideas for new features, feel free to [open an issue](https://github.com/Raghunandan0777/LinkVault/issues) on GitHub.
+User signs up via Clerk (email/Google/GitHub) → gets a JWT → backend verifies it with `@clerk/express` → auto-creates a Supabase user record on first login. Every API call sends the token in the header.
 
 ---
 
-**Built with ❤️ by [Raghunandan](https://github.com/Raghunandan0777)**
+## Contributing
+
+Fork it, branch it, PR it. Standard flow. Issues and feature ideas welcome.
+
+---
+
+## License
+
+MIT
+
+---
+
+Built by [Raghunandan](https://github.com/Raghunandan0777)
