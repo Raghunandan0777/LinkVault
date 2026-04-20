@@ -13,6 +13,7 @@ import Settings from './pages/Settings';
 import LandingPage from './pages/LandingPage';
 import PublicProfile from './pages/PublicProfile';
 import PublicCollection from './pages/PublicCollection';
+import Teams from './pages/Teams';
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder';
 
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="public-page" element={<PublicPageView />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="teams" element={<Teams />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

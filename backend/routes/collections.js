@@ -106,4 +106,26 @@ router.delete('/:id', requireAuth, syncUser, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// PATCH /api/collections/:id/reorder - reorder links in a collection
+router.patch('/:id/reorder', requireAuth, syncUser, async (req, res, next) => {
+  try {
+    const clerkId = req.auth.userId;
+    const { data: user } = await supabase.from('users').select('id').eq('clerk_id', clerkId).single();
+    const { items } = req.body; // [{id, position}]
+
+    if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'Items array required' });
+
+    // Update each link's position
+    for (const item of items) {
+      await supabase.from('links')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', item.id)
+        .eq('user_id', user.id);
+    }
+
+    res.json({ success: true });
+  } catch (err) { next(err); }
+});
+
 export default router;
+

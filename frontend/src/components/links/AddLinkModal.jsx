@@ -4,7 +4,12 @@ import { createLink, getTags, createTag, getCollections, enrichUrl } from '../..
 import { useApp } from '../../context/AppContext';
 import toast from 'react-hot-toast';
 
-const TAG_COLORS = ['#5353E8','#EC4899','#10B981','#F59E0B','#EF4444','#8B5CF6','#0EA5E9','#14B8A6'];
+const C = {
+  accent: '#8B5CF6', secondary: '#F472B6', tertiary: '#FBBF24',
+  quaternary: '#34D399', foreground: '#1E293B', cream: '#FFFDF5', muted: '#64748B',
+};
+const hardShadow = (c = C.foreground, x = 4, y = 4) => `${x}px ${y}px 0px 0px ${c}`;
+const TAG_COLORS = ['#8B5CF6','#F472B6','#34D399','#FBBF24','#EF4444','#0EA5E9','#14B8A6','#F97316'];
 
 export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }) {
   const { addLink, tags, setTags, collections, setCollections } = useApp();
@@ -17,8 +22,6 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
   const [loading, setLoading] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
-
-  // Enrichment state
   const [enriching, setEnriching] = useState(false);
   const [enriched, setEnriched] = useState(null);
   const enrichTimer = useRef(null);
@@ -28,42 +31,21 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
     if (!collections.length) getCollections().then(setCollections).catch(() => {});
   }, []);
 
-  // Debounced URL enrichment — auto-fill title & thumbnail on URL paste/change
   useEffect(() => {
     if (enrichTimer.current) clearTimeout(enrichTimer.current);
-
-    if (!url.trim() || !isValidUrl(url.trim())) {
-      setEnriched(null);
-      return;
-    }
-
+    if (!url.trim() || !isValidUrl(url.trim())) { setEnriched(null); return; }
     enrichTimer.current = setTimeout(async () => {
       setEnriching(true);
       try {
         const data = await enrichUrl(url.trim());
         setEnriched(data);
-        // Only auto-fill title if user hasn't manually typed one
-        if (!title.trim() && data.title) {
-          setTitle(data.title);
-        }
-      } catch {
-        // Enrichment failed silently — user can still type manually
-      } finally {
-        setEnriching(false);
-      }
-    }, 800); // 800ms debounce
-
-    return () => {
-      if (enrichTimer.current) clearTimeout(enrichTimer.current);
-    };
+        if (!title.trim() && data.title) setTitle(data.title);
+      } catch {} finally { setEnriching(false); }
+    }, 800);
+    return () => { if (enrichTimer.current) clearTimeout(enrichTimer.current); };
   }, [url]);
 
-  function isValidUrl(string) {
-    try {
-      new URL(string);
-      return true;
-    } catch { return false; }
-  }
+  function isValidUrl(string) { try { new URL(string); return true; } catch { return false; } }
 
   const handleAddTag = async () => {
     if (!newTagName.trim()) return;
@@ -83,39 +65,59 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
     setLoading(true);
     try {
       const link = await createLink({
-        url: url.trim(),
-        title: title.trim() || undefined,
-        notes: notes.trim() || undefined,
-        collection_id: collectionId || undefined,
-        tags: selectedTags,
-        is_public: isPublic,
+        url: url.trim(), title: title.trim() || undefined,
+        notes: notes.trim() || undefined, collection_id: collectionId || undefined,
+        tags: selectedTags, is_public: isPublic,
       });
       addLink(link);
       if (onCreated) onCreated(link);
       toast.success('Link saved to vault!');
       onClose();
-    } catch (err) {
-      toast.error(err?.error || 'Failed to save link');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { toast.error(err?.error || 'Failed to save link'); }
+    finally { setLoading(false); }
   };
 
   const toggleTag = (id) => setSelectedTags(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
 
+  const inputStyle = {
+    border: `2px solid ${C.foreground}15`,
+    borderRadius: 12,
+    fontSize: 14,
+    outline: 'none',
+    transition: 'all 0.2s',
+    fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50 p-4"
+      style={{ background: 'rgba(30,41,59,0.4)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-scale-in"
+        className="w-full max-w-lg animate-scale-in"
+        style={{
+          background: C.cream,
+          border: `2px solid ${C.foreground}`,
+          borderRadius: 20,
+          boxShadow: `8px 8px 0px 0px ${C.accent}`,
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4" style={{ borderBottom: `2px solid ${C.foreground}08` }}>
           <div>
-            <h2 className="font-display font-bold text-lg text-gray-900">Add to Vault</h2>
-            <p className="text-sm text-gray-400 mt-0.5">Archiving a new piece of digital history</p>
+            <h2 className="font-extrabold text-lg" style={{ fontFamily: '"Outfit", system-ui, sans-serif', color: C.foreground }}>Add to Vault</h2>
+            <p className="text-sm mt-0.5" style={{ color: C.muted }}>Archiving a new piece of digital history</p>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg transition-all"
+            style={{ color: C.muted, border: `2px solid ${C.foreground}10` }}
+            onMouseEnter={e => { e.currentTarget.style.background = `${C.secondary}12`; e.currentTarget.style.color = C.secondary; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.muted; }}
+          >
             <X size={18} />
           </button>
         </div>
@@ -123,69 +125,53 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
           {/* URL */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Paste URL Here</label>
+            <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.muted }}>Paste URL Here</label>
             <div className="relative">
-              <Link2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Link2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: C.muted }} />
               <input
-                type="url"
-                value={url}
-                onChange={e => setUrl(e.target.value)}
+                type="url" value={url} onChange={e => setUrl(e.target.value)}
                 placeholder="https://example.com/awesome-resource"
-                className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-100 transition-all"
-                required
-                autoFocus
+                style={{ ...inputStyle, width: '100%', paddingLeft: 40, paddingRight: 36, paddingTop: 12, paddingBottom: 12, background: '#fff' }}
+                onFocus={e => { e.target.style.borderColor = C.accent; e.target.style.boxShadow = `0 0 0 3px ${C.accent}15`; }}
+                onBlur={e => { e.target.style.borderColor = `${C.foreground}15`; e.target.style.boxShadow = 'none'; }}
+                required autoFocus
               />
-              {/* Enrichment status indicator */}
-              {enriching && (
-                <Loader2 size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-400 animate-spin" />
-              )}
-              {!enriching && enriched && (
-                <CheckCircle2 size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-green-500" />
-              )}
+              {enriching && <Loader2 size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin" style={{ color: C.accent }} />}
+              {!enriching && enriched && <CheckCircle2 size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2" style={{ color: C.quaternary }} />}
             </div>
           </div>
 
-          {/* Enrichment preview — thumbnail */}
+          {/* Enrichment preview */}
           {enriched?.thumbnail_url && (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 animate-fade-in">
-              <img
-                src={enriched.thumbnail_url}
-                alt="Preview"
-                className="w-16 h-12 rounded-lg object-cover flex-shrink-0"
-                onError={e => e.target.parentElement.style.display = 'none'}
-              />
+            <div className="flex items-center gap-3 p-3 rounded-xl animate-fade-in" style={{ background: '#fff', border: `2px solid ${C.foreground}08` }}>
+              <img src={enriched.thumbnail_url} alt="Preview" className="w-16 h-12 rounded-lg object-cover flex-shrink-0" onError={e => e.target.parentElement.style.display = 'none'} />
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-gray-700 truncate">{enriched.title || 'Fetched preview'}</p>
-                <p className="text-xs text-gray-400 truncate">{enriched.domain}</p>
+                <p className="text-xs font-bold truncate" style={{ color: C.foreground }}>{enriched.title || 'Fetched preview'}</p>
+                <p className="text-xs truncate" style={{ color: C.muted }}>{enriched.domain}</p>
               </div>
-              <div className="ml-auto flex-shrink-0">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 text-green-600 text-xs font-medium">
-                  <Image size={10} /> Preview
-                </span>
-              </div>
+              <span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: `${C.quaternary}15`, color: C.quaternary }}>
+                <Image size={10} /> Preview
+              </span>
             </div>
           )}
 
-          {/* Title + Collection row */}
+          {/* Title + Collection */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder={enriching ? 'Fetching title...' : 'Entry title'}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.muted }}>Title</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                placeholder={enriching ? 'Fetching...' : 'Entry title'}
+                style={{ ...inputStyle, width: '100%', padding: '10px 12px', background: '#fff' }}
+                onFocus={e => { e.target.style.borderColor = C.accent; }}
+                onBlur={e => { e.target.style.borderColor = `${C.foreground}15`; }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.muted }}>
                 <FolderOpen size={12} className="inline mr-1" />Collection
               </label>
-              <select
-                value={collectionId}
-                onChange={e => setCollectionId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 bg-white transition-all"
+              <select value={collectionId} onChange={e => setCollectionId(e.target.value)}
+                style={{ ...inputStyle, width: '100%', padding: '10px 12px', background: '#fff' }}
               >
                 <option value="">None</option>
                 {collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -195,19 +181,17 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
 
           {/* Tags */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.muted }}>
               <Tag size={12} className="inline mr-1" />Tags
             </label>
-            <div className="flex flex-wrap gap-2 p-3 rounded-xl border border-gray-200 bg-gray-50 min-h-[46px]">
+            <div className="flex flex-wrap gap-2 p-3 rounded-xl min-h-[46px]" style={{ background: '#fff', border: `2px solid ${C.foreground}10` }}>
               {tags.map(tag => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => toggleTag(tag.id)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold transition-all"
+                <button key={tag.id} type="button" onClick={() => toggleTag(tag.id)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all"
                   style={{
-                    backgroundColor: selectedTags.includes(tag.id) ? tag.color_hex : '#F3F4F6',
-                    color: selectedTags.includes(tag.id) ? '#fff' : '#6B7280',
+                    backgroundColor: selectedTags.includes(tag.id) ? tag.color_hex : '#fff',
+                    color: selectedTags.includes(tag.id) ? '#fff' : tag.color_hex,
+                    border: `1.5px solid ${tag.color_hex}40`,
                   }}
                 >
                   {tag.name}
@@ -216,59 +200,63 @@ export default function AddLinkModal({ onClose, defaultCollectionId, onCreated }
               ))}
               {showTagInput ? (
                 <div className="flex items-center gap-1">
-                  <input
-                    autoFocus
-                    value={newTagName}
-                    onChange={e => setNewTagName(e.target.value)}
+                  <input autoFocus value={newTagName} onChange={e => setNewTagName(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                    className="text-xs px-2 py-1 rounded-lg border border-brand-300 outline-none w-24"
+                    className="text-xs px-2 py-1 rounded-lg outline-none w-24"
+                    style={{ border: `2px solid ${C.accent}`, fontSize: 12 }}
                     placeholder="Tag name"
                   />
-                  <button type="button" onClick={handleAddTag} className="text-xs text-brand-600 font-semibold hover:text-brand-800">Add</button>
-                  <button type="button" onClick={() => setShowTagInput(false)} className="text-xs text-gray-400">✕</button>
+                  <button type="button" onClick={handleAddTag} className="text-xs font-bold" style={{ color: C.accent }}>Add</button>
+                  <button type="button" onClick={() => setShowTagInput(false)} className="text-xs" style={{ color: C.muted }}>✕</button>
                 </div>
               ) : (
-                <button type="button" onClick={() => setShowTagInput(true)} className="text-xs text-gray-400 hover:text-brand-600 px-2 py-1">+ Add tag</button>
+                <button type="button" onClick={() => setShowTagInput(true)} className="text-xs px-2 py-1 font-medium" style={{ color: C.muted }}>+ Add tag</button>
               )}
             </div>
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider mb-2" style={{ color: C.muted }}>
               <FileText size={12} className="inline mr-1" />Notes
             </label>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Why are you saving this?"
-              rows={3}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all resize-none"
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Why are you saving this?" rows={3}
+              style={{ ...inputStyle, width: '100%', padding: '10px 12px', background: '#fff', resize: 'none' }}
+              onFocus={e => { e.target.style.borderColor = C.accent; }}
+              onBlur={e => { e.target.style.borderColor = `${C.foreground}15`; }}
             />
           </div>
 
-          {/* Public toggle — BUG #6 fix: onClick on label for full clickable area */}
+          {/* Public toggle */}
           <label className="flex items-center gap-3 cursor-pointer" onClick={() => setIsPublic(p => !p)}>
-            <div
-              className={`w-10 h-5 rounded-full transition-colors relative ${isPublic ? 'bg-brand-600' : 'bg-gray-200'}`}
-            >
-              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${isPublic ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            <div className="w-11 h-6 rounded-full relative transition-colors" style={{ background: isPublic ? C.accent : `${C.foreground}20`, border: `2px solid ${C.foreground}20` }}>
+              <span className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform" style={{ transform: isPublic ? 'translateX(22px)' : 'translateX(2px)' }} />
             </div>
-            <span className="text-sm text-gray-600">Make this link public</span>
+            <span className="text-sm" style={{ color: C.foreground }}>Make this link public</span>
           </label>
 
           {/* Actions */}
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all"
+              style={{ color: C.foreground, border: `2px solid ${C.foreground}15` }}
+              onMouseEnter={e => { e.target.style.background = `${C.foreground}05`; }}
+              onMouseLeave={e => { e.target.style.background = 'transparent'; }}
+            >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading || !url}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 disabled:opacity-60 transition-all shadow-sm shadow-brand-200"
+            <button type="submit" disabled={loading || !url}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold transition-all duration-200 disabled:opacity-60"
+              style={{
+                background: C.accent,
+                border: `2px solid ${C.foreground}`,
+                boxShadow: hardShadow(C.foreground, 3, 3),
+              }}
+              onMouseEnter={e => { if (!loading) { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 5, 5); e.currentTarget.style.transform = 'translate(-2px,-2px)'; } }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 3, 3); e.currentTarget.style.transform = 'none'; }}
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              {loading ? 'Archiving Link...' : 'Archive Link'}
+              {loading ? 'Archiving...' : 'Archive Link'}
             </button>
           </div>
         </form>

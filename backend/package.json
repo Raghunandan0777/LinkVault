@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@clerk/express": "^2.0.7",
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.100.1",
     "axios": "^1.14.0",
     "cheerio": "^1.2.0",

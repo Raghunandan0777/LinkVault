@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, syncUser } from '../middleware/auth.js';
 import supabase from '../config/supabase.js';
 import { enrichUrl } from '../utils/enrichUrl.js';
+import { generateAITags } from '../utils/aiTagger.js';
 
 const router = Router();
 
@@ -122,13 +123,53 @@ router.post('/', requireAuth, syncUser, async (req, res, next) => {
     const { data: link, error } = await supabase.from('links').insert(linkData).select().single();
     if (error) throw error;
 
-    // Add tags
-    if (tags && tags.length > 0) {
-      const tagInserts = tags.map(tagId => ({ link_id: link.id, tag_id: tagId }));
+    // AI auto-tagging: generate semantic tags from enriched metadata
+    let allTagIds = [...(tags || [])];
+    try {
+      const aiTagNames = await generateAITags({
+        title: linkData.title,
+        description: linkData.description,
+        domain: linkData.domain,
+        url,
+      });
+
+      if (aiTagNames.length > 0) {
+        for (const tagName of aiTagNames) {
+          // Check if tag already exists for this user
+          const { data: existing } = await supabase
+            .from('tags')
+            .select('id')
+            .eq('user_id', user.id)
+            .ilike('name', tagName)
+            .single();
+
+          if (existing) {
+            if (!allTagIds.includes(existing.id)) allTagIds.push(existing.id);
+          } else {
+            // Auto-create the tag
+            const TAG_COLORS = ['#8B5CF6','#F472B6','#34D399','#FBBF24','#0EA5E9','#14B8A6','#F97316','#EF4444'];
+            const color = TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+            const { data: newTag } = await supabase
+              .from('tags')
+              .insert({ user_id: user.id, name: tagName, color_hex: color })
+              .select()
+              .single();
+            if (newTag) allTagIds.push(newTag.id);
+          }
+        }
+      }
+    } catch (aiErr) {
+      console.error('[AI Tagger] Error during auto-tagging:', aiErr.message);
+    }
+
+    // Add all tags (manual + AI)
+    if (allTagIds.length > 0) {
+      const uniqueIds = [...new Set(allTagIds)];
+      const tagInserts = uniqueIds.map(tagId => ({ link_id: link.id, tag_id: tagId }));
       await supabase.from('link_tags').insert(tagInserts);
     }
 
-    // Record click analytics
+    // Record save analytics
     await supabase.from('link_saves').insert({ user_id: user.id, link_id: link.id });
 
     // Re-query with joins so frontend gets complete data for instant display
@@ -209,5 +250,193 @@ router.post('/:id/click', async (req, res, next) => {
 });
 
 // Tag routes moved above /:id — see top of file
+
+// POST /api/links/import - import bookmarks from HTML file
+router.post('/import', requireAuth, syncUser, async (req, res, next) => {
+  try {
+    const clerkId = req.auth.userId;
+    const { data: user } = await supabase.from('users').select('id, plan').eq('clerk_id', clerkId).single();
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const { html } = req.body;
+    if (!html) return res.status(400).json({ error: 'HTML content is required' });
+
+    // Parse bookmarks from HTML (Chrome/Firefox format)
+    const { load } = await import('cheerio');
+    const $ = load(html);
+    const bookmarks = [];
+
+    $('a[href]').each((_, el) => {
+      const url = $(el).attr('href');
+      const title = $(el).text().trim();
+      if (url && url.startsWith('http')) {
+        bookmarks.push({ url, title: title || url });
+      }
+    });
+
+    if (bookmarks.length === 0) return res.status(400).json({ error: 'No bookmarks found in the file' });
+
+    // Check free tier limit
+    if (user.plan === 'free') {
+      const { count } = await supabase.from('links').select('id', { count: 'exact' }).eq('user_id', user.id);
+      const remaining = 200 - (count || 0);
+      if (remaining <= 0) return res.status(403).json({ error: 'Free plan limit (200 links) reached.' });
+      bookmarks.splice(remaining); // trim to remaining capacity
+    }
+
+    // Limit to 500 per import
+    const toImport = bookmarks.slice(0, 500);
+    let imported = 0;
+    let skipped = 0;
+
+    for (const bm of toImport) {
+      try {
+        // Check for duplicate
+        const { data: existing } = await supabase.from('links').select('id').eq('user_id', user.id).eq('url', bm.url).single();
+        if (existing) { skipped++; continue; }
+
+        // Basic enrichment (just domain + favicon, skip full scraping for speed)
+        let domain = 'unknown';
+        let favicon_url = null;
+        try {
+          const parsed = new URL(bm.url);
+          domain = parsed.hostname;
+          favicon_url = `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=64`;
+        } catch {}
+
+        await supabase.from('links').insert({
+          user_id: user.id,
+          url: bm.url,
+          title: bm.title,
+          domain,
+          favicon_url,
+          click_count: 0,
+          is_public: false,
+        });
+        imported++;
+      } catch { skipped++; }
+    }
+
+    res.json({ success: true, imported, skipped, total: toImport.length });
+  } catch (err) { next(err); }
+});
+
+// GET /api/links/export - export links as JSON
+router.get('/export', requireAuth, syncUser, async (req, res, next) => {
+  try {
+    const clerkId = req.auth.userId;
+    const { data: user } = await supabase.from('users').select('id').eq('clerk_id', clerkId).single();
+    const { format = 'json' } = req.query;
+
+    const { data: links } = await supabase
+      .from('links')
+      .select('url, title, description, domain, notes, is_public, click_count, created_at, link_tags(tags(name))')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (format === 'csv') {
+      const header = 'URL,Title,Description,Domain,Tags,Notes,Public,Clicks,Created\n';
+      const rows = (links || []).map(l => {
+        const tags = l.link_tags?.map(lt => lt.tags?.name).filter(Boolean).join(';') || '';
+        return [l.url, l.title, l.description, l.domain, tags, l.notes, l.is_public, l.click_count, l.created_at]
+          .map(v => `"${(v || '').toString().replace(/"/g, '""')}"`)
+          .join(',');
+      }).join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="linkvault-export.csv"');
+      return res.send(header + rows);
+    }
+
+    // JSON format
+    const clean = (links || []).map(l => ({
+      url: l.url, title: l.title, description: l.description, domain: l.domain,
+      tags: l.link_tags?.map(lt => lt.tags?.name).filter(Boolean) || [],
+      notes: l.notes, is_public: l.is_public, click_count: l.click_count, created_at: l.created_at,
+    }));
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="linkvault-export.json"');
+    res.json({ exported_at: new Date().toISOString(), count: clean.length, links: clean });
+  } catch (err) { next(err); }
+});
+
+// POST /api/links/search/ai - AI semantic search
+router.post('/search/ai', requireAuth, syncUser, async (req, res, next) => {
+  try {
+    const clerkId = req.auth.userId;
+    const { data: user } = await supabase.from('users').select('id').eq('clerk_id', clerkId).single();
+    const { query } = req.body;
+    if (!query?.trim()) return res.status(400).json({ error: 'Search query is required' });
+
+    // Get all user's links
+    const { data: links } = await supabase
+      .from('links')
+      .select('id, url, title, description, domain, thumbnail_url, favicon_url, click_count, created_at, link_tags(tags(id, name, color_hex))')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (!links || links.length === 0) return res.json({ results: [], query });
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      // Fallback: simple keyword search across title + description + domain
+      const q = query.toLowerCase();
+      const results = links.filter(l =>
+        (l.title || '').toLowerCase().includes(q) ||
+        (l.description || '').toLowerCase().includes(q) ||
+        (l.domain || '').toLowerCase().includes(q) ||
+        l.link_tags?.some(lt => (lt.tags?.name || '').toLowerCase().includes(q))
+      ).slice(0, 10);
+      return res.json({ results, query, method: 'keyword' });
+    }
+
+    // Use Gemini to rank links by semantic relevance
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    const linkSummaries = links.slice(0, 100).map((l, i) => {
+      const tags = l.link_tags?.map(lt => lt.tags?.name).filter(Boolean).join(', ') || '';
+      return `[${i}] "${l.title || 'Untitled'}" - ${l.domain || ''} ${tags ? `(${tags})` : ''}`;
+    }).join('\n');
+
+    const prompt = `You are a bookmark search engine. Given a user's search query and their saved bookmarks, return the indexes of the most relevant bookmarks.
+
+Search query: "${query}"
+
+Bookmarks:
+${linkSummaries}
+
+Return ONLY a JSON array of the top 10 most relevant bookmark indexes, ordered by relevance. Example: [5, 12, 3, 0, 8]
+If no bookmarks are relevant, return [].`;
+
+    try {
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
+      const match = text.match(/\[.*\]/s);
+
+      if (match) {
+        const indexes = JSON.parse(match[0]);
+        const results = indexes
+          .filter(i => typeof i === 'number' && i >= 0 && i < links.length)
+          .slice(0, 10)
+          .map(i => links[i]);
+        return res.json({ results, query, method: 'ai' });
+      }
+    } catch (aiErr) {
+      console.error('[AI Search] Gemini error:', aiErr.message);
+    }
+
+    // Fallback if AI fails
+    const q = query.toLowerCase();
+    const results = links.filter(l =>
+      (l.title || '').toLowerCase().includes(q) ||
+      (l.description || '').toLowerCase().includes(q) ||
+      (l.domain || '').toLowerCase().includes(q)
+    ).slice(0, 10);
+    res.json({ results, query, method: 'keyword_fallback' });
+  } catch (err) { next(err); }
+});
 
 export default router;

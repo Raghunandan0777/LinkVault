@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Bell, Command } from 'lucide-react';
+import { Search, Plus, Bell, Command, Menu } from 'lucide-react';
 import { useUser } from '@clerk/clerk-react';
 import AddLinkModal from '../links/AddLinkModal';
 import SearchModal from '../links/SearchModal';
 
-export default function Topbar() {
+const C = {
+  accent: '#8B5CF6', foreground: '#1E293B', cream: '#FFFDF5', muted: '#64748B',
+};
+const hardShadow = (c = C.foreground, x = 3, y = 3) => `${x}px ${y}px 0px 0px ${c}`;
+
+export default function Topbar({ setMobileMenuOpen }) {
   const { user } = useUser();
   const [showAdd, setShowAdd] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -22,33 +27,72 @@ export default function Topbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-[220px] right-0 h-[64px] bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-6 gap-4 z-20">
+      <header
+        className="fixed top-0 left-0 md:left-[240px] right-0 h-[68px] flex items-center px-4 md:px-6 gap-3 md:gap-4 z-20"
+        style={{
+          background: `${C.cream}E6`,
+          backdropFilter: 'blur(12px)',
+          borderBottom: `2px solid ${C.foreground}08`,
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+        }}
+      >
+        {/* Mobile Menu Toggle */}
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="md:hidden p-2 rounded-lg transition-all"
+          style={{ color: C.muted, border: `2px solid ${C.foreground}15` }}
+        >
+          <Menu size={20} />
+        </button>
+
         {/* Search trigger */}
         <button
           onClick={() => setShowSearch(true)}
-          className="flex items-center gap-3 flex-1 max-w-md px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm text-gray-400 hover:border-brand-300 transition-all"
+          className="flex items-center gap-2 md:gap-3 flex-1 max-w-[200px] md:max-w-md px-3 md:px-4 py-2 md:py-2.5 rounded-xl text-xs md:text-sm transition-all"
+          style={{
+            background: `${C.cream}`,
+            border: `2px solid ${C.foreground}15`,
+            color: C.muted,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = `${C.accent}50`; e.currentTarget.style.boxShadow = `0 0 0 2px ${C.accent}15`; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = `${C.foreground}15`; e.currentTarget.style.boxShadow = 'none'; }}
         >
           <Search size={16} />
           <span>Search links...</span>
-          <span className="ml-auto flex items-center gap-1 text-xs text-gray-300">
+          <span className="ml-auto flex items-center gap-1 text-xs" style={{ color: `${C.muted}60` }}>
             <Command size={12} />K
           </span>
         </button>
 
         <div className="flex items-center gap-2 ml-auto">
-          <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
-            <Bell size={18} />
+          <button
+            className="hidden md:flex items-center justify-center w-9 h-9 rounded-lg transition-all"
+            style={{ color: C.muted, border: `2px solid ${C.foreground}10` }}
+            onMouseEnter={e => { e.currentTarget.style.background = `${C.accent}10`; e.currentTarget.style.color = C.accent; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.muted; }}
+          >
+            <Bell size={17} />
           </button>
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition-all shadow-sm shadow-brand-200"
+            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-full text-white text-sm font-bold transition-all duration-200"
+            style={{
+              background: C.accent,
+              border: `2px solid ${C.foreground}`,
+              boxShadow: hardShadow(),
+            }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 5, 5); e.currentTarget.style.transform = 'translate(-2px, -2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = hardShadow(); e.currentTarget.style.transform = 'translate(0,0)'; }}
+            onMouseDown={e => { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 1, 1); e.currentTarget.style.transform = 'translate(2px, 2px)'; }}
+            onMouseUp={e => { e.currentTarget.style.boxShadow = hardShadow(C.foreground, 5, 5); e.currentTarget.style.transform = 'translate(-2px, -2px)'; }}
           >
-            <Plus size={16} />
-            Add Link
+            <Plus size={16} strokeWidth={2.5} />
+            <span className="hidden md:block">Add Link</span>
           </button>
           <img
             src={user?.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`}
-            className="w-8 h-8 rounded-full object-cover border border-gray-200 cursor-pointer"
+            className="w-9 h-9 rounded-full object-cover cursor-pointer"
+            style={{ border: `2px solid ${C.foreground}` }}
             alt="avatar"
           />
         </div>

@@ -23,6 +23,12 @@ router.post('/order', requireAuth, syncUser, async (req, res, next) => {
     const { plan } = req.body;
     if (!PLANS[plan]) return res.status(400).json({ error: 'Invalid plan' });
 
+    // Check if Razorpay keys are configured
+    if (!process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID.includes('your_key') ||
+        !process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET.includes('your_')) {
+      return res.status(503).json({ error: 'Payment gateway is being set up. Please try again later or contact support.' });
+    }
+
     const clerkId = req.auth.userId;
     const { data: user } = await supabase.from('users').select('id, email, display_name').eq('clerk_id', clerkId).single();
 
@@ -42,7 +48,10 @@ router.post('/order', requireAuth, syncUser, async (req, res, next) => {
       description: PLANS[plan].description,
       prefill: { name: user.display_name || '', email: user.email || '' },
     });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('Payment order error:', err.message || err);
+    next(err);
+  }
 });
 
 // POST /api/payment/verify - verify & activate plan

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkVault</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 360px;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: #FFFDF5;
+      color: #1E293B;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 18px;
+      border-bottom: 2px solid #1E293B10;
+    }
+
+    .logo {
+      width: 32px; height: 32px;
+      background: #8B5CF6;
+      border: 2px solid #1E293B;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 3px 3px 0px 0px #1E293B;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .header .badge {
+      margin-left: auto;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: #34D39915;
+      color: #34D399;
+      border: 1px solid #34D39930;
+    }
+
+    /* Auth Section */
+    .auth-section {
+      padding: 18px;
+    }
+
+    .auth-section label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748B;
+      margin-bottom: 8px;
+    }
+
+    .auth-section input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #1E293B15;
+      border-radius: 12px;
+      font-size: 13px;
+      outline: none;
+      background: white;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .auth-section input:focus {
+      border-color: #8B5CF6;
+      box-shadow: 0 0 0 3px #8B5CF620;
+    }
+
+    .save-btn {
+      margin-top: 10px;
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #1E293B;
+      border-radius: 14px;
+      background: #8B5CF6;
+      color: white;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 4px 4px 0px 0px #1E293B;
+      transition: all 0.15s;
+    }
+
+    .save-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px 0px #1E293B;
+    }
+
+    .save-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 0px 0px 0px 0px #1E293B;
+    }
+
+    .save-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 4px 4px 0px 0px #1E293B;
+    }
+
+    /* Page Preview */
+    .preview {
+      margin: 14px 18px;
+      padding: 14px;
+      border: 2px solid #1E293B15;
+      border-radius: 14px;
+      background: white;
+    }
+
+    .preview .title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .preview .url {
+      font-size: 11px;
+      color: #64748B;
+      word-break: break-all;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .preview .domain {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #8B5CF6;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .preview .domain img {
+      width: 14px; height: 14px;
+      border-radius: 3px;
+    }
+
+    /* Collection selector */
+    .collection-select {
+      margin: 0 18px 14px;
+    }
+
+    .collection-select label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748B;
+      margin-bottom: 6px;
+    }
+
+    .collection-select select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 2px solid #1E293B15;
+      border-radius: 10px;
+      font-size: 13px;
+      background: white;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .collection-select select:focus {
+      border-color: #8B5CF6;
+    }
+
+    /* Status messages */
+    .status {
+      margin: 0 18px 14px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .status.success {
+      display: block;
+      background: #34D39915;
+      color: #059669;
+      border: 1.5px solid #34D39930;
+    }
+
+    .status.error {
+      display: block;
+      background: #EF444415;
+      color: #EF4444;
+      border: 1.5px solid #EF444430;
+    }
+
+    .status.loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #8B5CF615;
+      color: #8B5CF6;
+      border: 1.5px solid #8B5CF630;
+    }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid #8B5CF630;
+      border-top-color: #8B5CF6;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Footer */
+    .footer {
+      padding: 12px 18px;
+      border-top: 2px solid #1E293B08;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #64748B;
+    }
+
+    .footer a {
+      color: #8B5CF6;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .settings-link {
+      font-size: 11px;
+      color: #64748B;
+      text-decoration: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .settings-link:hover {
+      background: #8B5CF610;
+      color: #8B5CF6;
+    }
+
+    /* Setup view */
+    .setup { padding: 24px 18px; text-align: center; }
+    .setup h2 { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .setup p { font-size: 13px; color: #64748B; margin-bottom: 16px; line-height: 1.5; }
+
+    .hidden { display: none !important; }
+
+    /* Tags */
+    .tags { margin: 0 18px 14px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: #8B5CF612;
+      color: #8B5CF6;
+      border: 1px solid #8B5CF625;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">LV</div>
+    <h1>LinkVault</h1>
+    <span class="badge" id="badge">Extension</span>
+  </div>
+
+  <!-- Setup View (shown if no API key) -->
+  <div id="setupView" class="setup">
+    <h2>Connect Your Account</h2>
+    <p>Enter your API URL and Clerk session token to start saving links.</p>
+    <div class="auth-section">
+      <label>API URL</label>
+      <input id="apiUrl" type="url" placeholder="http://localhost:5000/api" value="http://localhost:5000/api" />
+      <label style="margin-top: 12px;">Auth Token</label>
+      <input id="authToken" type="password" placeholder="Your Clerk session token" />
+      <button class="save-btn" id="connectBtn" style="margin-top: 14px;">🔗 Connect Account</button>
+    </div>
+  </div>
+
+  <!-- Main View (shown after connection) -->
+  <div id="mainView" class="hidden">
+    <div class="preview" id="pagePreview">
+      <div class="title" id="pageTitle">Loading...</div>
+      <div class="url" id="pageUrl"></div>
+      <div class="domain"><img id="pageFavicon" src="" alt=""><span id="pageDomain"></span></div>
+    </div>
+
+    <div class="collection-select">
+      <label>Save to Collection (optional)</label>
+      <select id="collectionSelect">
+        <option value="">No collection</option>
+      </select>
+    </div>
+
+    <div id="aiTags" class="tags"></div>
+
+    <div id="status" class="status"></div>
+
+    <div style="padding: 0 18px 14px;">
+      <button class="save-btn" id="saveBtn">⚡ Save to Vault</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>LinkVault v1.0</span>
+    <span class="settings-link" id="settingsLink">⚙ Settings</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -15,6 +15,7 @@ import analyticsRouter from './routes/analytics.js';
 import profileRouter from './routes/profile.js';
 import paymentRouter from './routes/payment.js';
 import publicRouter from './routes/public.js';
+import teamsRouter from './routes/teams.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -38,6 +39,7 @@ app.use('/api/analytics', analyticsRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/public', publicRouter);
+app.use('/api/teams', teamsRouter);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
