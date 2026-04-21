@@ -54,11 +54,24 @@ function hideStatus() {
 // Initialize
 async function init() {
   try {
-    const cookie = await new Promise(resolve => {
-      chrome.cookies.get({ url: 'http://localhost:5173', name: '__session' }, resolve);
-    });
+    let cookie = await new Promise(resolve => chrome.cookies.get({ url: 'https://linkvault-nubz.onrender.com', name: '__session' }, resolve));
+    let isProd = true;
+    
+    if (!cookie) {
+      cookie = await new Promise(resolve => chrome.cookies.get({ url: 'http://localhost:5173', name: '__session' }, resolve));
+      isProd = false;
+    }
+
     if (cookie && cookie.value) {
-      await saveConfig('http://localhost:5000/api', cookie.value);
+      // Don't auto-override a custom API URL if it's already set
+      const current = await getConfig();
+      if (!current.apiUrl) {
+         // Auto-fallback config 
+         const defaultApiUrl = isProd ? 'https://linkvault-my.onrender.com/api' : 'http://localhost:5000/api';
+         await saveConfig(defaultApiUrl, cookie.value);
+      } else {
+         await saveConfig(current.apiUrl, cookie.value);
+      }
     }
   } catch (e) {
     console.log("Could not auto-fetch connect token.");

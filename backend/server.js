@@ -27,6 +27,11 @@ app.use(cors({ origin: [process.env.FRONTEND_URL, 'http://localhost:5173', "http
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.url} - Auth Header: ${req.headers.authorization ? 'PRESENT' : 'MISSING'}`);
+  next();
+});
+
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 app.use('/api/', limiter);
 

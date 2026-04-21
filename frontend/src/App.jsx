@@ -15,7 +15,17 @@ import PublicProfile from './pages/PublicProfile';
 import PublicCollection from './pages/PublicCollection';
 import Teams from './pages/Teams';
 
-const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder';
+import { useAuth } from '@clerk/clerk-react';
+import { setTokenFetcher } from './lib/api';
+import { useEffect } from 'react';
+
+function AuthInterceptor({ children }) {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    setTokenFetcher(getToken);
+  }, [getToken]);
+  return <>{children}</>;
+}
 
 function ProtectedRoute({ children }) {
   return (
@@ -26,10 +36,13 @@ function ProtectedRoute({ children }) {
   );
 }
 
+const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder';
+
 export default function App() {
   return (
     <ClerkProvider publishableKey={CLERK_KEY} afterSignInUrl="/links" afterSignUpUrl="/links">
-      <AppProvider>
+      <AuthInterceptor>
+        <AppProvider>
         <Toaster
           position="top-right"
           toastOptions={{
@@ -55,6 +68,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </AppProvider>
+      </AuthInterceptor>
     </ClerkProvider>
   );
 }

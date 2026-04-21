@@ -4,7 +4,7 @@
   "description": "Save any page to your LinkVault with one click. Auto-fetches title, thumbnail, and AI tags.",
   "version": "1.0.0",
   "permissions": ["activeTab", "storage", "cookies"],
-  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*", "https://linkvault-nubz.onrender.com/*", "https://linkvault-my.onrender.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

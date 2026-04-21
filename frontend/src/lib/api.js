@@ -4,12 +4,23 @@ const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({ baseURL: BASE, withCredentials: true });
 
+let currentGetToken = null;
+
+export const setTokenFetcher = (fetcher) => {
+  currentGetToken = fetcher;
+};
+
 // Inject Clerk token before each request
 api.interceptors.request.use(async (config) => {
   try {
-    // window.__clerk__ is set by ClerkProvider
-    const token = await window.__clerk__?.session?.getToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (currentGetToken) {
+      const token = await currentGetToken();
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // Fallback
+      const token = await window.Clerk?.session?.getToken() || await window.__clerk__?.session?.getToken();
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+    }
   } catch {}
   return config;
 });
