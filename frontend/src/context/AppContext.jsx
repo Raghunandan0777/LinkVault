@@ -1,13 +1,48 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [links, setLinks] = useState([]);
-  const [collections, setCollections] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [profile, setProfile] = useState(null);
-  const [plan, setPlan] = useState('free');
+  const [links, setLinks] = useState(() => {
+    const saved = localStorage.getItem('links');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [collections, setCollections] = useState(() => {
+    const saved = localStorage.getItem('collections');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [tags, setTags] = useState(() => {
+    const saved = localStorage.getItem('tags');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [profile, setProfile] = useState(() => {
+    const saved = localStorage.getItem('profile');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [plan, setPlan] = useState(() => {
+    const saved = localStorage.getItem('plan');
+    return saved ? JSON.parse(saved) : 'free';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('links', JSON.stringify(links));
+  }, [links]);
+
+  useEffect(() => {
+    localStorage.setItem('collections', JSON.stringify(collections));
+  }, [collections]);
+
+  useEffect(() => {
+    localStorage.setItem('tags', JSON.stringify(tags));
+  }, [tags]);
+
+  useEffect(() => {
+    localStorage.setItem('profile', JSON.stringify(profile));
+  }, [profile]);
+
+  useEffect(() => {
+    localStorage.setItem('plan', JSON.stringify(plan));
+  }, [plan]);
 
   const addLink = useCallback((link) => setLinks(prev => [link, ...prev]), []);
   const removeLink = useCallback((id) => setLinks(prev => prev.filter(l => l.id !== id)), []);
