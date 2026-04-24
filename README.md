@@ -91,7 +91,7 @@ cd backend && npx nodemon
 # Terminal 2
 cd frontend && npm run dev
 ```
-
+** LIVE URL :  https://linkvault-nubz.onrender.com 
 Open http://localhost:5173
 
 ### Chrome extension (optional)
